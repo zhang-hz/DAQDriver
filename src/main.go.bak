@@ -1,0 +1,84 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+const ADCFilterAddress int64 = 0xA0000000
+const ADCSPIAddress int64 = 0xA0000000
+const ADCRawAddress int64 = 0xA0010000
+
+func main() {
+
+	var ADCReceiver ADCController = *newADCController(ADCSPIAddress, ADCFilterAddress)
+
+	SampleNumber, _ := strconv.ParseInt(os.Args[1], 10, 64)
+
+	var dataList [4][1000000]float64
+	var tmp [2]uint64
+	var orderFlagTemp = [4]uint32{0, 0, 0, 0}
+	var dataTempList [4]uint32
+	var dataTemp uint32
+	var avg = [4]float64{0, 0, 0, 0}
+
+	var i int64
+	var n int32
+	var p = [4]int64{0, 0, 0, 0}
+
+	startTime := time.Now().UnixNano()
+	for i = 0; i <= SampleNumber-1; i++ {
+
+		tmp = ADCReceiver.readADC()
+		dataTempList[0] = uint32(tmp[1] >> 32)
+		dataTempList[1] = uint32(tmp[1] & 0xFFFFFFFF)
+		dataTempList[2] = uint32(tmp[0] >> 32)
+		dataTempList[3] = uint32(tmp[0] & 0xFFFFFFFF)
+
+		for n = 0; n <= 3; n++ {
+			dataTemp = dataTempList[n]
+			orderFlag := (dataTemp >> 25) & 0x1F
+			if orderFlag != orderFlagTemp[n] {
+
+				orderFlagTemp[n] = orderFlag
+
+				if ((dataTemp >> 24) & 0x01) == 1 {
+					dataTemp = dataTemp | 0xFF000000
+				} else {
+					dataTemp = dataTemp & 0x00FFFFFF
+				}
+				t := uint32(dataTemp)
+				dataList[n][p[n]] = float64(int32(t)*488) / BasicGainOffset
+				p[n]++
+
+				//fmt.Print(orderFlagCheck[n], "\n")
+			}
+		}
+	}
+
+	endTime := time.Now().UnixNano()
+
+	for n = 0; n <= 3; n++ {
+		var datalen = p[n] - 1
+		for i = 0; i <= datalen; i++ {
+			avg[n] = avg[n] + dataList[n][i]
+		}
+	}
+
+	fmt.Print("---------------CH0-----------------\n")
+	fmt.Print(avg[0]/float64(p[0]*1e6), " mV\n")
+	fmt.Print(p[0], "\n")
+	fmt.Print("---------------CH1-----------------\n")
+	fmt.Print(avg[1]/float64(p[1]*1e6), " mV\n")
+	fmt.Print(p[1], "\n")
+	fmt.Print("---------------CH2-----------------\n")
+	fmt.Print(avg[2]/float64(p[2]*1e6), " mV\n")
+	fmt.Print(p[2], "\n")
+	fmt.Print("---------------CH3-----------------\n")
+	fmt.Print(avg[3]/float64(p[3]*1e6), " mV\n")
+	fmt.Print(p[3], "\n")
+	fmt.Print("-------------Time------------------\n")
+	fmt.Print(float64((endTime-startTime)/1e6), " ms\n")
+}
