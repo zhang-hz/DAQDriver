@@ -17,9 +17,9 @@ type TemperatureController interface {
 type TemperatureControllerInstance struct {
 	vtRelation  []vtCoefficient
 	datain      chan DAQDataCH
-	powerout    chan DAQPowerCH
 	dac         DACController
 	heater      pidctl.PIDController
+	info        *HeaterInfo
 	baseVoltage float64
 }
 
@@ -69,14 +69,13 @@ func (tmpctl *TemperatureControllerInstance) startStaticHeater(basevoltage float
 	fmt.Println("Core API: Base Voltage: ", tmpctl.baseVoltage)
 	fmt.Println("Core API: Target Voltage: ", tmpctl.heater.Target)
 
-	go tmpctl.heating(tmpctl.datain, tmpctl.powerout)
+	go tmpctl.heating(tmpctl.datain, tmpctl.info)
 	fmt.Println("Core API: Started heater temperature controller: ")
 }
 
 func (tmpctl *TemperatureControllerInstance) stopStaticHeater() {
 
 	helperCHSign = helperCHSign & 0xFD
-	powerCHSign = 0
 	tmpctl.dac.setDACVoltage("TP2", 0)
 	time.Sleep(time.Duration(1) * time.Millisecond)
 	tmpctl.dac.setDACVoltage("TP1", 0)
@@ -98,10 +97,10 @@ func (tmpctl *TemperatureControllerInstance) setupTemperature(temperature float6
 
 }
 
-func newTemperatureController(dacctl DACController, dchinput chan DAQDataCH, pchoutput chan DAQPowerCH) *TemperatureController {
+func newTemperatureController(dacctl DACController, dchinput chan DAQDataCH, info *HeaterInfo) *TemperatureController {
 
 	var PIDCTL pidctl.PIDController = *pidctl.NewPIDController()
-	var TMPCTL TemperatureController = &TemperatureControllerInstance{dac: dacctl, heater: PIDCTL, datain: dchinput, powerout: pchoutput}
+	var TMPCTL TemperatureController = &TemperatureControllerInstance{dac: dacctl, heater: PIDCTL, datain: dchinput, info: info}
 
 	TMPCTL.initialize()
 

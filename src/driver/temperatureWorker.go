@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (tmpctl *TemperatureControllerInstance) heating(din <-chan DAQDataCH, pout chan<- DAQPowerCH) {
+func (tmpctl *TemperatureControllerInstance) heating(din <-chan DAQDataCH, heaterInfo *HeaterInfo) {
 
 	for len(din) > 0 {
 		<-din
@@ -15,18 +15,19 @@ func (tmpctl *TemperatureControllerInstance) heating(din <-chan DAQDataCH, pout 
 	for i := int64(0); i < dataChDepth+100; i++ {
 		<-din
 	}
-	powerCHSign = 1
 
 	var dtmp DAQDataCH
-	var ptmp DAQPowerCH
 
-	sleepTime := time.Duration(tmpctl.heater.Interval/2) * time.Nanosecond
-	dacInterval := time.Duration(50) * time.Microsecond
+	//sleepTime := time.Duration(tmpctl.heater.Interval/2) * time.Nanosecond
+	dacInterval := time.Duration(20) * time.Microsecond
 	for {
 
-		if helperCHSign&0x2 == 0 || powerCHSign == 0 {
+		if helperCHSign&0x2 == 0 {
 			helperCHSign = helperCHSign & 0xFD
-			powerCHSign = 0
+			heaterInfo.voltage[0] = 0
+			heaterInfo.voltage[1] = 0
+			heaterInfo.power[0] = 0
+			heaterInfo.power[1] = 0
 			fmt.Print("Core API: Stop heater temperature controller \n")
 			return
 		}
@@ -39,17 +40,15 @@ func (tmpctl *TemperatureControllerInstance) heating(din <-chan DAQDataCH, pout 
 			tmpctl.dac.setDACVoltage("TP2", heater)
 			time.Sleep(dacInterval)
 			tmpctl.dac.setDACVoltage("TP1", heater)
-		}
-		time.Sleep(sleepTime)
-		ptmp.heaterv[0] = heater
-		ptmp.heaterv[1] = heater
-		ptmp.heaterv[2] = heater
+			time.Sleep(dacInterval)
 
-		ptmp.heaterp = [3]float64{0, 0, 0}
-
-		if int64(len(pout)) < dataChDepth-1 {
-			pout <- ptmp
+			heaterInfo.voltage[0] = heater
+			heaterInfo.voltage[1] = heater
 		}
+		//time.Sleep(sleepTime)
+
+		heaterInfo.power[0] = 0
+		heaterInfo.power[1] = 0
 
 	}
 

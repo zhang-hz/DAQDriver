@@ -9,11 +9,6 @@ type DAQDataCH struct {
 	directv [4]float64
 }
 
-type DAQPowerCH struct {
-	heaterv [3]float64
-	heaterp [3]float64
-}
-
 func (corectl *CoreController) fetchData(dout chan<- DAQDataCH) {
 
 	fmt.Print("Start Fetch Data\n")
@@ -32,23 +27,18 @@ func (corectl *CoreController) fetchData(dout chan<- DAQDataCH) {
 	}
 }
 
-func interconnectHub(din <-chan DAQDataCH, pin <-chan DAQPowerCH, socket chan<- socketCH, dout1 chan<- DAQDataCH, dout2 chan<- DAQDataCH) {
+func interconnectHub(din <-chan DAQDataCH, heater *HeaterInfo, socket chan<- socketCH, dout1 chan<- DAQDataCH, dout2 chan<- DAQDataCH) {
 
 	var socketdata socketCH
 	var num = int64(0)
 	var downsample = int64(0)
 	var heaterDownSample = int64(0)
 	var data = DAQDataCH{}
-	var power = DAQPowerCH{[3]float64{0, 0, 0}, [3]float64{0, 0, 0}}
 
 	for {
 		//fmt.Print(helperCHSign, "\n")
 		data = <-din
 		diffv := data.directv[0] - data.directv[1]
-
-		if powerCHSign == 1 && len(pin) > 0 {
-			power = <-pin
-		}
 
 		if downsample >= socketDownSampleRate-1 {
 
@@ -70,13 +60,13 @@ func interconnectHub(din <-chan DAQDataCH, pin <-chan DAQPowerCH, socket chan<- 
 				socketdata.directv[3][num] = data.directv[3]
 				socketdata.diffv[num] = diffv
 
-				socketdata.heaterv[0][num] = power.heaterv[0]
-				socketdata.heaterv[1][num] = power.heaterv[1]
-				socketdata.heaterv[2][num] = power.heaterv[2]
+				socketdata.heaterv[0][num] = heater.voltage[0]
+				socketdata.heaterv[1][num] = heater.voltage[1]
+				socketdata.heaterv[2][num] = heater.voltage[0] - heater.voltage[1]
 
-				socketdata.heaterp[0][num] = power.heaterp[0]
-				socketdata.heaterp[1][num] = power.heaterp[1]
-				socketdata.heaterp[2][num] = power.heaterp[2]
+				socketdata.heaterp[0][num] = heater.power[0]
+				socketdata.heaterp[1][num] = heater.power[1]
+				socketdata.heaterp[2][num] = heater.power[0] - heater.power[1]
 
 				num++
 			}

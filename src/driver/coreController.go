@@ -6,7 +6,7 @@ const socketChDepth = int64(10)
 const helperChDepth = int64(100000)
 const socketDataLength = int64(500)
 const socketDownSampleRate = int64(20)
-const heaterDownSampleRate = int64(10)
+const heaterDownSampleRate = int64(5)
 
 //AXI地址映射
 const ADCFilterAddress int64 = 0xA0000000
@@ -16,6 +16,12 @@ const DACSPIAddress int64 = 0xB0010000
 
 type DAQInfo struct {
 	vos [4]float64
+}
+
+type HeaterInfo struct {
+	voltage     [2]float64
+	power       [2]float64
+	temperature [2]float64
 }
 
 type CoreControllerInterface interface {
@@ -42,7 +48,6 @@ type CoreController struct {
 	socketch   chan socketCH
 	dchhelper1 chan DAQDataCH
 	dchhelper2 chan DAQDataCH
-	powerch    chan DAQPowerCH
 	ctlch      chan string
 	DAQSetting DAQInfo
 
@@ -50,11 +55,12 @@ type CoreController struct {
 	adc    ADCController
 	dac    DACController
 	tmp    TemperatureController
+
+	heater HeaterInfo
 }
 
 var runningDAQ = bool(true)
 var socketCHSign = uint8(0)
-var powerCHSign = uint8(0)
 var helperCHSign = uint8(0)
 
 func (corectl *CoreController) Initialize() {
@@ -63,13 +69,15 @@ func (corectl *CoreController) Initialize() {
 
 	runningDAQ = true
 	socketCHSign = 0
-	powerCHSign = 0
 	helperCHSign = 0
+
+	//初始化缓存
+
+	corectl.heater = HeaterInfo{[2]float64{0, 0}, [2]float64{0, 0}, [2]float64{0, 0}}
 
 	//初始化信号通道
 
 	corectl.datach = make(chan DAQDataCH, dataChDepth)
-	corectl.powerch = make(chan DAQPowerCH, dataChDepth)
 	corectl.socketch = make(chan socketCH, socketChDepth)
 	corectl.dchhelper1 = make(chan DAQDataCH, helperChDepth)
 	corectl.dchhelper2 = make(chan DAQDataCH, helperChDepth)
@@ -97,11 +105,11 @@ func (corectl *CoreController) Initialize() {
 	corectl.dac.regDACPort("TP2", "HVDAC", 1)
 
 	//初始化温度控制器
-	corectl.tmp = *newTemperatureController(corectl.dac, corectl.dchhelper2, corectl.powerch)
+	corectl.tmp = *newTemperatureController(corectl.dac, corectl.dchhelper2, &corectl.heater)
 
 	//初始化数据交换器
 
-	go interconnectHub(corectl.datach, corectl.powerch, corectl.socketch, corectl.dchhelper1, corectl.dchhelper2)
+	go interconnectHub(corectl.datach, &corectl.heater, corectl.socketch, corectl.dchhelper1, corectl.dchhelper2)
 }
 
 func (corectl *CoreController) ConnectSocket() bool {

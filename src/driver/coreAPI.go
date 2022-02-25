@@ -92,7 +92,14 @@ func (corectl *CoreController) SetADCVos(ADCCH int64, VosNumber float64) {
 
 func (corectl *CoreController) SetDACVoltage(DACPort string, Voltage float64) float64 {
 
-	return corectl.dac.setDACVoltage(DACPort, Voltage)
+	voltageNow := corectl.dac.setDACVoltage(DACPort, Voltage)
+	if DACPort == "TP1" {
+		corectl.heater.voltage[0] = voltageNow
+	} else if DACPort == "TP2" {
+		corectl.heater.voltage[1] = voltageNow
+	}
+
+	return voltageNow
 
 }
 func (corectl *CoreController) GetDACVoltage(DACPort string) float64 {
@@ -130,6 +137,7 @@ func (corectl *CoreController) StartStaticHeater(basevoltage float64, targetTemp
 **/
 
 func (corectl *CoreController) StopStaticHeater() {
+
 	corectl.tmp.stopStaticHeater()
 }
 
