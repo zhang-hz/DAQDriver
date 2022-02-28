@@ -33,14 +33,14 @@ func (tmpctl *TemperatureControllerInstance) heating(din <-chan DAQDataCH, heate
 		}
 
 		dtmp = <-din
-		heater := tmpctl.heater.Linear(dtmp.directv[1])
+		heater := tmpctl.heater.Linear(dtmp.directv[0] - dtmp.directv[1])
 		//fmt.Println(heater)
 
 		if heater != 0 {
 			tmpctl.dac.setDACVoltage("TP2", heater)
 			time.Sleep(dacInterval)
-			tmpctl.dac.setDACVoltage("TP1", heater)
-			time.Sleep(dacInterval)
+			//tmpctl.dac.setDACVoltage("TP1", heater)
+			//time.Sleep(dacInterval)
 
 			heaterInfo.voltage[0] = heater
 			heaterInfo.voltage[1] = heater

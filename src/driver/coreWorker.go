@@ -38,7 +38,6 @@ func interconnectHub(din <-chan DAQDataCH, heater *HeaterInfo, socket chan<- soc
 	for {
 		//fmt.Print(helperCHSign, "\n")
 		data = <-din
-		diffv := data.directv[0] - data.directv[1]
 
 		if downsample >= socketDownSampleRate-1 {
 
@@ -55,10 +54,10 @@ func interconnectHub(din <-chan DAQDataCH, heater *HeaterInfo, socket chan<- soc
 				}
 
 				socketdata.directv[0][num] = data.directv[0]
-				socketdata.directv[1][num] = data.directv[1]
+				socketdata.directv[1][num] = data.directv[0] - data.directv[1]
 				socketdata.directv[2][num] = data.directv[2]
 				socketdata.directv[3][num] = data.directv[3]
-				socketdata.diffv[num] = diffv
+				socketdata.diffv[num] = data.directv[1]
 
 				socketdata.heaterv[0][num] = heater.voltage[0]
 				socketdata.heaterv[1][num] = heater.voltage[1]

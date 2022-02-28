@@ -63,6 +63,8 @@ func (tmpctl *TemperatureControllerInstance) vtmap(temperature float64) float64 
 func (tmpctl *TemperatureControllerInstance) startStaticHeater(basevoltage float64, targetTemperature float64) {
 
 	fmt.Println("Core API: Starting heater temperature controller: ")
+	tmpctl.dac.setDACVoltage("TP1", 0)
+	time.Sleep(time.Duration(1) * time.Millisecond)
 	tmpctl.heater.Reset()
 	tmpctl.baseVoltage = basevoltage
 	tmpctl.heater.Target = tmpctl.vtmap(targetTemperature) + tmpctl.baseVoltage

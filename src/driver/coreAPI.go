@@ -63,7 +63,7 @@ func avgVoltageExec(dout chan<- avgVoltageData, SampleNumber int64, din <-chan D
 	}
 
 	result := avgVoltageData{
-		Voltage: avg,
+		Voltage: [4]float64{avg[0], avg[0] - avg[1], avg[2], avg[3]},
 		Time:    float64(endTime - startTime),
 	}
 
