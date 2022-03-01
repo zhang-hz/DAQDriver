@@ -60,8 +60,16 @@ func setDACOffsetLocal(DACport string, offsetVoltage float64) {
 	device.SetDACOffset(DACport, offsetVoltage)
 }
 
-func startHeaterStaticPIDLocal(temperature float64, baseVoavgVoltage float64) {
-	device.StartStaticHeater(baseVoavgVoltage, temperature)
+func startHeaterProgramPIDLocal(baseVoltage float64, heatingSpeed float64, baseTemperature float64) {
+	device.StartProgramHeater(baseVoltage, heatingSpeed, baseTemperature)
+}
+
+func stopHeaterProgramPIDLocal() {
+	device.StopProgramHeater()
+}
+
+func startHeaterStaticPIDLocal(temperature float64, baseVoltage float64) {
+	device.StartStaticHeater(baseVoltage, temperature)
 }
 
 func stopHeaterStaticPIDLocal() {

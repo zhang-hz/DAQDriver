@@ -6,7 +6,7 @@ const socketChDepth = int64(10)
 const helperChDepth = int64(100000)
 const socketDataLength = int64(500)
 const socketDownSampleRate = int64(20)
-const heaterDownSampleRate = int64(5)
+const heaterDownSampleRate = int64(10)
 
 //AXI地址映射
 const ADCFilterAddress int64 = 0xA0000000
@@ -36,6 +36,8 @@ type CoreControllerInterface interface {
 	SetDACVoltage(string, float64) float64
 	GetDACVoltage(string) float64
 	SetDACOffset(string, float64)
+	StartProgramHeater(float64, float64, float64)
+	StopProgramHeater()
 	StartStaticHeater(float64, float64)
 	StopStaticHeater()
 	SetupStaticHeater(float64, float64, float64, float64, float64)

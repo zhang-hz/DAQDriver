@@ -8,6 +8,8 @@ import (
 
 type TemperatureController interface {
 	initialize()
+	startProgHeater(float64, float64, float64)
+	stopProgHeater()
 	startStaticHeater(float64, float64)
 	stopStaticHeater()
 	setupStaticHeater(pidctl.PIDSetting)
@@ -15,12 +17,13 @@ type TemperatureController interface {
 }
 
 type TemperatureControllerInstance struct {
-	vtRelation  []vtCoefficient
-	datain      chan DAQDataCH
-	dac         DACController
-	heater      pidctl.PIDController
-	info        *HeaterInfo
-	baseVoltage float64
+	vtRelation      []vtCoefficient
+	datain          chan DAQDataCH
+	dac             DACController
+	heater          pidctl.PIDController
+	info            *HeaterInfo
+	baseVoltage     float64
+	progHeatingInfo progHeatingSetting
 }
 
 type vtCoefficient struct {
@@ -28,6 +31,13 @@ type vtCoefficient struct {
 	end   float64
 	a     float64
 	b     float64
+}
+
+type progHeatingSetting struct {
+	startTime       int64
+	speed           float64
+	baseTemperature float64
+	maxTemperature  float64
 }
 
 func (tmpctl *TemperatureControllerInstance) initialize() {
@@ -40,6 +50,8 @@ func (tmpctl *TemperatureControllerInstance) initialize() {
 		b:     -611.16518e6,
 	}
 	tmpctl.baseVoltage = 0
+
+	tmpctl.progHeatingInfo = progHeatingSetting{startTime: 0, speed: 0, baseTemperature: 0}
 
 }
 
@@ -54,9 +66,49 @@ func (tmpctl *TemperatureControllerInstance) vtmap(temperature float64) float64 
 		}
 	}
 
-	fmt.Println("Core API: V-T mapping: ", temperature, "->", v)
+	//fmt.Println("Core API: V-T mapping: ", temperature, "->", v)
 
 	return v
+
+}
+
+func (tmpctl *TemperatureControllerInstance) progVTMap() float64 {
+
+	timeNow := time.Now().UnixMicro()
+	progTemp := tmpctl.progHeatingInfo.speed*float64(timeNow-tmpctl.progHeatingInfo.startTime) + tmpctl.progHeatingInfo.baseTemperature
+	if progTemp > tmpctl.progHeatingInfo.maxTemperature {
+		progTemp = tmpctl.progHeatingInfo.maxTemperature
+	}
+	return tmpctl.vtmap(progTemp)
+
+}
+
+func (tmpctl *TemperatureControllerInstance) startProgHeater(basevoltage float64, heatingSpeed float64, baseTemperature float64) {
+
+	fmt.Println("Core API: Starting program heating temperature controller: ")
+	tmpctl.dac.setDACVoltage("TP1", 0)
+	time.Sleep(time.Duration(1) * time.Millisecond)
+	tmpctl.heater.Reset()
+	tmpctl.baseVoltage = basevoltage
+	tmpctl.progHeatingInfo.speed = heatingSpeed
+	tmpctl.progHeatingInfo.baseTemperature = baseTemperature
+	tmpctl.progHeatingInfo.maxTemperature = 150
+	tmpctl.progHeatingInfo.startTime = time.Now().UnixMicro()
+	go tmpctl.progHeating(tmpctl.datain, tmpctl.info)
+	fmt.Println("Core API: Started program heating temperature controller: ")
+
+}
+
+func (tmpctl *TemperatureControllerInstance) stopProgHeater() {
+
+	fmt.Println("Core API: Stopping program heating temperature controller: ")
+	helperCHSign = helperCHSign & 0xFD
+	time.Sleep(time.Duration(1) * time.Millisecond)
+	tmpctl.progHeatingInfo.speed = 0
+	tmpctl.dac.setDACVoltage("TP2", 0)
+	time.Sleep(time.Duration(1) * time.Millisecond)
+	tmpctl.dac.setDACVoltage("TP1", 0)
+	fmt.Println("Core API: Stopped program heating temperature controller: ")
 
 }
 
@@ -68,6 +120,7 @@ func (tmpctl *TemperatureControllerInstance) startStaticHeater(basevoltage float
 	tmpctl.heater.Reset()
 	tmpctl.baseVoltage = basevoltage
 	tmpctl.heater.Target = tmpctl.vtmap(targetTemperature) + tmpctl.baseVoltage
+	fmt.Println("Core API: V-T mapping: ", targetTemperature, "->", tmpctl.heater.Target)
 	fmt.Println("Core API: Base Voltage: ", tmpctl.baseVoltage)
 	fmt.Println("Core API: Target Voltage: ", tmpctl.heater.Target)
 

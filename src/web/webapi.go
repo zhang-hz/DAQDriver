@@ -88,6 +88,23 @@ func setDACOffset(c *gin.Context) {
 
 }
 
+func startHeaterProgramPID(c *gin.Context) {
+
+	baseVoltage, _ := strconv.ParseFloat(c.Param("basevoltage"), 64)
+	heatingSpeed, _ := strconv.ParseFloat(c.Param("heatingspeed"), 64)
+	baseTemperature, _ := strconv.ParseFloat(c.Param("basetemperature"), 64)
+	fmt.Println("Web API: startHeaterProgramPID: HeatingSpeed:", heatingSpeed, "basevoltage:", baseVoltage, "basetemperature:", baseTemperature)
+	startHeaterProgramPIDLocal(baseVoltage, heatingSpeed, baseTemperature)
+	fmt.Println("Web API: startHeaterProgramPID: Done")
+	c.Status(http.StatusOK)
+}
+
+func stopHeaterProgramPID(c *gin.Context) {
+	fmt.Println("Web API: stopHeaterProgramPID")
+	stopHeaterProgramPIDLocal()
+	c.Status(http.StatusOK)
+}
+
 func startHeaterStaticPID(c *gin.Context) {
 	temperature, _ := strconv.ParseFloat(c.Param("temperature"), 64)
 	baseVoltage, _ := strconv.ParseFloat(c.Param("basevoltage"), 64)

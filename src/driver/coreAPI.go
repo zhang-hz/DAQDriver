@@ -120,7 +120,30 @@ func (corectl *CoreController) SetDACOffset(DACPort string, offsetVoltage float6
 
 /**
 *
-*  启动温度控制器
+*  启动程序温度控制器
+*
+**/
+
+func (corectl *CoreController) StartProgramHeater(basevoltage float64, heatingSpeed float64, baseTemperature float64) {
+
+	corectl.tmp.startProgHeater(basevoltage, heatingSpeed/1e6, baseTemperature)
+
+}
+
+/**
+*
+*  停止程序温度控制器
+*
+**/
+
+func (corectl *CoreController) StopProgramHeater() {
+
+	corectl.tmp.stopProgHeater()
+}
+
+/**
+*
+*  启动静态温度控制器
 *
 **/
 
@@ -132,7 +155,7 @@ func (corectl *CoreController) StartStaticHeater(basevoltage float64, targetTemp
 
 /**
 *
-*  停止温度控制器
+*  停止静态温度控制器
 *
 **/
 
@@ -141,6 +164,12 @@ func (corectl *CoreController) StopStaticHeater() {
 	corectl.tmp.stopStaticHeater()
 }
 
+/**
+*
+*  设定静态温度控制器
+*
+**/
+
 func (corectl *CoreController) SetupTemperature(temperature float64) {
 
 	corectl.tmp.setupTemperature(temperature)
@@ -148,7 +177,7 @@ func (corectl *CoreController) SetupTemperature(temperature float64) {
 
 /**
 *
-*  停止温度控制器参数
+*  设定温度控制器参数
 *
 **/
 
@@ -163,7 +192,7 @@ func (corectl *CoreController) SetupStaticHeater(kp float64, ki float64, kd floa
 		Tolerance:      tolerance,
 		ErrorTolerance: errorTolerance,
 		LimitMin:       0,
-		LimitMax:       3e9,
+		LimitMax:       3.4e9,
 		LimitMinIntg:   0,
 		LimitMaxIntg:   0,
 	}

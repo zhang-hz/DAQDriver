@@ -23,6 +23,8 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("/heater/static/stop", stopHeaterStaticPID)
 		apiv1.GET("/heater/pid/temperature/:temperature", setupTemperature)
 		apiv1.GET("/heater/pid/parameters/:kp/:ki/:kd/:tolerance/:errorTolerance", setupHeaterPIDParameter)
+		apiv1.GET("/heater/prog/start/:basevoltage/:heatingspeed/:basetemperature", startHeaterProgramPID)
+		apiv1.GET("/heater/prog/stop", stopHeaterProgramPID)
 
 	}
 
