@@ -86,7 +86,7 @@ func (dacctl *DACControllerInstance) setDACVoltage(name string, voltage float64)
 
 	channelInfo.voltageNow = float64(number * channelInfo.step)
 
-	return channelInfo.voltageNow - channelInfo.offsetVoltage
+	return channelInfo.voltageNow
 
 }
 

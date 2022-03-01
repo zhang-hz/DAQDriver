@@ -68,7 +68,7 @@ func (adcctl *ADCControllerInstance) initialize() {
 	adcctl.exeCommand(vosSetupCommand)
 
 	adcctl.vos = [4]float64{0, 0, 0, 0}
-	adcctl.gain = [4]float64{1.01, 10.9, 195.8, 195.8}
+	adcctl.gain = [4]float64{1.01, 1.01, 195.8, 195.8}
 
 }
 
