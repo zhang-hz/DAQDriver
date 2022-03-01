@@ -92,7 +92,7 @@ func (tmpctl *TemperatureControllerInstance) startProgHeater(basevoltage float64
 	tmpctl.baseVoltage = basevoltage
 	tmpctl.progHeatingInfo.speed = heatingSpeed
 	tmpctl.progHeatingInfo.baseTemperature = baseTemperature
-	tmpctl.progHeatingInfo.maxTemperature = 150
+	tmpctl.progHeatingInfo.maxTemperature = 160
 	tmpctl.progHeatingInfo.startTime = time.Now().UnixMicro()
 	go tmpctl.progHeating(tmpctl.datain, tmpctl.info)
 	fmt.Println("Core API: Started program heating temperature controller: ")
